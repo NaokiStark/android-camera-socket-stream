@@ -1,7 +1,11 @@
 package com.example.alvin.camerasource;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +25,11 @@ public class MainActivity extends AppCompatActivity {
     public static String SERVERIP = "localhost";
     public static final int SERVERPORT = 9191;
     private Handler handler = new Handler();
+    public static MainActivity ctx = null;
+
+    public MainActivity(){
+        ctx = this;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,13 +70,34 @@ public class MainActivity extends AppCompatActivity {
      */
     public static Camera getCameraInstance()
     {
-        Camera c=null;
+        if(!checkCameraPermission()){
+            return null;
+        }
+        Camera c = null;
         try{
-            c=Camera.open();
+
+            c=Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+
         }catch(Exception e){
             e.printStackTrace();
         }
         return c;
     }
 
+    /**
+     * Check for camera permission
+     */
+    public static boolean checkCameraPermission(){
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            //ask for authorisation
+            ActivityCompat.requestPermissions(ctx, new String[]{Manifest.permission.CAMERA}, 50);
+            checkCameraPermission();
+
+        }
+        else {
+            return true;
+        }
+
+        return false;
+    }
 }
