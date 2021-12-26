@@ -1,21 +1,26 @@
 package com.example.alvin.camerasource;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,26 +28,81 @@ public class MainActivity extends AppCompatActivity {
     public MyCameraView mPreview;
     public TextView serverStatus;
     public static String SERVERIP = "localhost";
-    public static final int SERVERPORT = 9191;
+    public static final int SERVERPORT = 4085;
     private Handler handler = new Handler();
     public static MainActivity ctx = null;
-
+    public WsServer wsServer;
+    public CameraFramer _cameraFramer;
+    public WebServer webServer;
     public MainActivity(){
         ctx = this;
     }
-
+    public String ip = "0.0.0.0";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        /*
+        java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
+        java.lang.System.setProperty("java.net.preferIPv4Stack", "true");*/
+
+        WifiManager wm = (WifiManager) ((Context)this).getSystemService(Context.WIFI_SERVICE);
+        ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+
+        try {
+            wsServer = new WsServer(new InetSocketAddress(InetAddress.getByName(ip), SERVERPORT), this);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
         serverStatus = (TextView) findViewById(R.id.textView);
+
         SERVERIP = getLocalIpAddress();
         mCamera = getCameraInstance();
         mPreview = new MyCameraView(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
-        Thread cThread = new Thread(new MyServerThread(this,SERVERIP,SERVERPORT,handler));
-        cThread.start();
+
+        // First start websocket server
+        wsServer.start();
+        //wsServer.run();
+
+        // Then start framing
+        _cameraFramer = new CameraFramer(this);
+
+        //Start webserver
+
+        webServer = new WebServer(8080, ip, this);
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            wsServer.stop();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            wsServer.start();
+        }catch (Exception e){
+
+        }
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        try {
+            wsServer.stop();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>AndroidWCam</title>
+  <style>
+    canvas{
+      width: 100%;
+      height:100%;
+      position: relative;
+    }
+  </style>
+</head>
+<body onload="startClient()">
+	<canvas id="rcanvas"></canvas>
+	<script type="text/javascript">
+		function startClient(){
+			var canvas = document.getElementById("rcanvas");
+    		var context = canvas.getContext("2d");
+    		context.canvas.width = window.innerWidth;
+    		context.canvas.height = 16 * window.innerWidth / 9;
+			ws = new WebSocket("ws://"+window.svrip);
+			ws.onmessage = function(e){
+				var msg = e.data;
+				if (msg)
+        		{
+        			if(msg instanceof Blob){
+        				var blobUrl = URL.createObjectURL(new Blob([msg]));
+  						var image = new Image();
+  						image.src = blobUrl;
+  						image.onload = function() { context.drawImage(image, 0, 0); };
+        			}
+        		}
+			}
+		}
+		
+	</script>
+</body>
+</html>

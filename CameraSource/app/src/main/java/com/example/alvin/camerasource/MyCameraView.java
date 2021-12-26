@@ -76,7 +76,7 @@ public class MyCameraView  extends SurfaceView implements SurfaceHolder.Callback
         try{
             //Configration Camera Parameter(full-size)
             Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setPreviewSize(320,240);
+            parameters.setPreviewSize(1280,720);
             this.width=parameters.getPreviewSize().width;
             this.height=parameters.getPreviewSize().height;
             parameters.setPreviewFormat(ImageFormat.NV21);

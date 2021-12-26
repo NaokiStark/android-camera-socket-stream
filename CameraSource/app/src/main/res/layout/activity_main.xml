@@ -30,5 +30,5 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:text="New Text" />
+        android:text="e" />
 </RelativeLayout>
